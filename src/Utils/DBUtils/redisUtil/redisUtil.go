@@ -2,7 +2,7 @@
  * @Description:封装redis操作
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-03-23 22:00:56
+ * @LastEditTime: 2021-03-24 18:20:17
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/spf13/viper"
 )
 
 type Redis struct {
@@ -22,9 +23,9 @@ type Redis struct {
 }
 
 func NewRedisPool() *redis.Pool {
-	var address = "localhost" //viper.GetString("redis.address")
-	var password = ""         //viper.GetString("redis.password")
-	var database = "1"        //viper.GetString("redis.database")
+	var address = viper.GetString("redis.address")
+	var password = viper.GetString("redis.password")
+	var database = viper.GetString("redis.database")
 	var port = "6379"
 	var redisUrl = ""
 	if password == "" {

@@ -10,29 +10,41 @@
 package LinksUtil
 
 import (
-	"fmt"
 	"log"
-	"main/src/Utils/ChromeDriverUtil"
 	"regexp"
 	"strings"
 )
 
-func Extract(url string) ([]string, string, error) {
-	doc_html, err := ChromeDriverUtil.StartChrome(url)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
+func ExtractUrls(resp string) ([]string, error) {
 
-	doc_html = strings.Replace(doc_html, " ", "", -1)
-	doc_html = strings.Replace(doc_html, "\n", "", -1)
-	fmt.Println(doc_html)
+	resp = strings.Replace(resp, " ", "", -1)
+	resp = strings.Replace(resp, "\n", "", -1)
 	//匹配所有链接形式
 	reg, err := regexp.Compile("<ahref=\"([^\"]+)\"[^>]*>[^<]+</a>")
 	if err != nil {
 		log.Printf("reg parse error:%s\n", err.Error())
-		return nil, doc_html, err
+		return nil, err
 	}
-	links := reg.FindAllString(doc_html, -1)
-	return links, doc_html, nil
+	links := reg.FindAllString(resp, -1)
+	return links, nil
+}
+
+/**
+ * @description:根据给定正则表达式爬取对应item元素
+ * @param  {*}
+ * @return {*}
+ * @param {*} resp
+ * @param {string} regex
+ */
+func ExtractItems(resp, regex string) ([]string, error) {
+
+	resp = strings.Replace(resp, " ", "", -1)
+	resp = strings.Replace(resp, "\n", "", -1)
+	reg, err := regexp.Compile(regex)
+	if err != nil {
+		log.Printf("reg parse error:%s\n", err.Error())
+		return nil, err
+	}
+	items := reg.FindAllString(resp, -1)
+	return items, nil
 }
