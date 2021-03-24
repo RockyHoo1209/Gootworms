@@ -2,7 +2,7 @@
  * @Description:封装redis操作
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-03-23 01:07:35
+ * @LastEditTime: 2021-03-23 22:00:56
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/spf13/viper"
 )
 
 type Redis struct {
@@ -23,10 +22,10 @@ type Redis struct {
 }
 
 func NewRedisPool() *redis.Pool {
-	var address = viper.GetString("redis.address")
-	var password = viper.GetString("redis.password")
-	var database = viper.GetString("redis.database")
-	var port = viper.GetString("redis.port")
+	var address = "localhost" //viper.GetString("redis.address")
+	var password = ""         //viper.GetString("redis.password")
+	var database = "1"        //viper.GetString("redis.database")
+	var port = "6379"
 	var redisUrl = ""
 	if password == "" {
 		redisUrl = "redis://" + address + ":" + port + "/" + database
@@ -55,8 +54,9 @@ func NewRedisPool() *redis.Pool {
 
 func (r *Redis) RPush(collection string, value interface{}) error {
 	con := r.pool.Get()
+	defer con.Close()
 	if _, err := con.Do("RPUSH", collection, value); err != nil {
-		log.Println(err)
+		log.Println(err.Error())
 		debug.PrintStack()
 		return err
 	}
@@ -65,6 +65,7 @@ func (r *Redis) RPush(collection string, value interface{}) error {
 
 func (r *Redis) LPush(collection string, value interface{}) error {
 	con := r.pool.Get()
+	defer con.Close()
 	if _, err := con.Do("LPUSH", collection, value); err != nil {
 		log.Println(err)
 		debug.PrintStack()
@@ -73,24 +74,28 @@ func (r *Redis) LPush(collection string, value interface{}) error {
 	return nil
 }
 
-func (r *Redis) RPop(collection string, value interface{}) error {
+func (r *Redis) RPop(collection string) (string, error) {
 	con := r.pool.Get()
-	if _, err := con.Do("RPOP", collection, value); err != nil {
+	defer con.Close()
+	res, err := redis.String(con.Do("RPOP", collection))
+	if err != nil {
 		log.Println(err)
 		debug.PrintStack()
-		return err
+		return "", err
 	}
-	return nil
+	return res, nil
 }
 
-func (r *Redis) LPop(collection string, value interface{}) error {
+func (r *Redis) LPop(collection string) (string, error) {
 	con := r.pool.Get()
-	if _, err := con.Do("LPOP", collection, value); err != nil {
-		log.Println(err)
+	defer con.Close()
+	res, err := redis.String(con.Do("LPOP", collection))
+	if err != nil {
+		log.Println(err.Error())
 		debug.PrintStack()
-		return err
+		return "", err
 	}
-	return nil
+	return res, nil
 }
 
 func NewClient() *Redis {
