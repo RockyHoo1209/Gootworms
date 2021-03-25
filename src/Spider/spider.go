@@ -1,14 +1,29 @@
 /*
- * @Description: 爬虫工作的主要处理模块,将解析的item与url存放到mongodb数据库
+ * @Description: 负责解析页面的主要工作
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 14:51:53
- * @LastEditTime: 2021-03-24 14:51:53
- * @LastEditors:
+ * @LastEditTime: 2021-03-25 12:01:09
+ * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
  */
 package Spider
 
-func Spider(resp string) {
+import (
+	"main/src/Utils/DBUtils/MongoUtil"
+	"main/src/Utils/LinksUtil"
+)
 
+func Spider(url, resp string) ([]string, []string, error) {
+	items, err := LinksUtil.ExtractItems(resp, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	subUrls, err := LinksUtil.ExtractUrls(resp)
+	if err != nil {
+		return items, nil, err
+	}
+	MongoUtil.InsertResponse(url, resp)
+	MongoUtil.InsertUrls(subUrls)
+	return items, subUrls, nil
 }

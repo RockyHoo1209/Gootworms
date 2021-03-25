@@ -1,8 +1,8 @@
 /*
- * @Description: MongoDB操作封装
+ * @Description: MongoDB操作封装(单例,复用)
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 17:41:52
- * @LastEditTime: 2021-03-24 21:27:45
+ * @LastEditTime: 2021-03-25 12:14:38
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -16,7 +16,18 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
+
+type Url struct {
+	Id  bson.ObjectId `bson:"_id"`
+	Url string        `json:"url"`
+}
+
+type Response struct {
+	Url     string `json:"Url"`
+	Context string `json:"context"`
+}
 
 var Session *mgo.Session
 var dialInfo *mgo.DialInfo
@@ -28,15 +39,48 @@ func GetSesstion() *mgo.Session {
 
 func GetCollection(collectionName string) (session *mgo.Session, collection *mgo.Collection) {
 	session = GetSesstion()
-	db := session.DB("mongo.db")
+	db := session.DB("Gootworms")
 	collection = db.C(collectionName)
 	return session, collection
 }
 
+func InsertUrls(urls []string) {
+	session, collection := GetCollection("Urls")
+	defer session.Close()
+	for _, url := range urls {
+		if url == "" {
+			continue
+		}
+		err := collection.Insert(&Url{
+			Id:  bson.NewObjectId(),
+			Url: url,
+		})
+		if err != nil {
+			log.Printf("Url insert error:%s\n", err.Error())
+			continue
+		}
+		log.Printf("Url:%s Insert Success!\n", url)
+	}
+}
+
+func InsertResponse(url, response string) {
+	session, collection := GetCollection("Response")
+	defer session.Close()
+	err := collection.Insert(&Response{
+		Url:     url,
+		Context: response,
+	})
+	if err != nil {
+		log.Println("Insert response failed!")
+		return
+	}
+	log.Println("Insert Response Success!")
+}
+
 func InitMongo() {
 	MongoDBHost := "localhost"
-	MongoDBPort := "2107"
-	MongoDBDataBase := "mongo.db"
+	MongoDBPort := "27017"
+	MongoDBDataBase := "Gootworms"
 	MongoDBUserName := ""
 	MongoDBPassword := ""
 	//连接池的数量默认4096,开销的压力是比较大的
@@ -78,6 +122,7 @@ func InitMongo() {
 		Key:    []string{"key"},
 		Unique: true,
 	}
+	//获取节点信息
 	session, collection := GetCollection("nodes")
 	defer session.Close()
 	collection.EnsureIndex(keyindx)

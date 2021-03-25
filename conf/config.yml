@@ -3,3 +3,12 @@ redis:
   password: ""
   database: 1
   port: 6379
+
+mongo:
+  address: localhost
+  password: ""
+  db: 1
+  port: 27017
+  username: ""
+  source: ""
+  
