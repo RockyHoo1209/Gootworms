@@ -12,7 +12,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"main/src/Utils/LinksUtil"
 	"os"
 )
 
@@ -21,7 +20,6 @@ func main() {
 		fmt.Printf("input helper to see the validate args!\n")
 		return
 	}
-	LinksUtil.Extract("https://news.qq.com/")
 	switch os.Args[1] {
 	case "master":
 		log.Printf("starting master...\n")

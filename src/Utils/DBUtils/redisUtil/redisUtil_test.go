@@ -2,12 +2,12 @@
  * @Description:
  * @Author: Rocky Hoo
  * @Date: 2021-03-23 08:44:59
- * @LastEditTime: 2021-03-23 22:32:13
+ * @LastEditTime: 2021-03-26 08:32:34
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
  */
-package redisUtil
+package RedisUtil
 
 import (
 	"fmt"
