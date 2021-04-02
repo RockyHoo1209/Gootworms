@@ -1,8 +1,8 @@
 /*
- * @Description:封装redis操作
+ * @Description:封装redis操作(redis实rpc通信)
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-03-26 19:56:12
+ * @LastEditTime: 2021-04-02 11:15:00
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -16,7 +16,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gomodule/redigo/redis"
-	"github.com/spf13/viper"
+	// "github.com/spf13/viper"
 )
 
 type Redis struct {
@@ -31,10 +31,10 @@ var RedisClient *Redis
  * @return {*}
  */
 func NewRedisPool() *redis.Pool {
-	var address = viper.GetString("redis.address")
-	var password = viper.GetString("redis.password")
-	var database = viper.GetString("redis.database")
-	var port = viper.GetString("redis.port")
+	var address = "localhost" //viper.GetString("redis.address")
+	var password = ""         //viper.GetString("redis.password")
+	var database = "1"        //viper.GetString("redis.database")
+	var port = "6379"         //viper.GetString("redis.port")
 	var redisUrl = ""
 	if password == "" {
 		redisUrl = "redis://" + address + ":" + port + "/" + database
@@ -96,10 +96,10 @@ func (r *Redis) RPop(collection string) (string, error) {
 	return res, nil
 }
 
-func (r *Redis) Ping() error{
-	conn:=r.pool.Get()
-	defer conn.Close()	
-	_,err:=conn.Do("ping")
+func (r *Redis) Ping() error {
+	conn := r.pool.Get()
+	defer conn.Close()
+	_, err := conn.Do("ping")
 	return err
 }
 
@@ -121,25 +121,36 @@ func NewClient() *Redis {
 	}
 }
 
-func InitRedis() (*Redis,error) {
-	if RedisClient != nil {
-		return RedisClient,nil
+/**
+ * @description: 初始化redis对外接口
+ * @param  {*}
+ * @return {*}
+ */
+func InitRedis() (*Redis, error) {
+	if RedisClient == nil {
+		RedisClient = NewClient()
 	}
-	RedisClient = NewClient()
 	bf := backoff.NewExponentialBackOff()
-	err:=backoff.Retry(func() (err error) {
-		err=RedisClient.Ping()
-		if err!=nil{
+	err := backoff.Retry(func() (err error) {
+		err = RedisClient.Ping()
+		if err != nil {
+			log.Println(err.Error())
 			log.Println("waiting for redis activate...")
 		}
 		return err
 	}, bf)
-	if err!=nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
-	return RedisClient,nil
+	return RedisClient, nil
 }
 
-func Reconn(){
-	//TODO:redis连接重连:捕获到连接断开的报错,并触发相应的重连机制(backoff)
+/**
+ * @description: 重连redis服务端
+ * @param  {*}
+ * @return {*}
+ */
+func Reconn() {
+	InitRedis()
 }
+

@@ -19,8 +19,8 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tebeka/selenium v0.9.9
-	golang.org/x/sys v0.0.0-20210324051608-47abb6519492 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/sys v0.0.0-20210331175145-43e1dd70ce54 // indirect
+	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/appengine v1.6.7
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
