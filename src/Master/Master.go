@@ -1,8 +1,8 @@
 /*
- * @Description: master节点,负责调度客户端节点
+ * @Description: Master节点的编写
  * @Author: Rocky Hoo
- * @Date: 2021-03-28 08:16:59
- * @LastEditTime: 2021-04-02 21:32:24
+ * @Date: 2021-04-05 00:01:58
+ * @LastEditTime: 2021-04-06 12:34:03
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -11,131 +11,124 @@ package Master
 
 import (
 	"log"
-	"main/src/Enum/NodeConstants"
+	"main/src/Data"
 	"main/src/Slave/Node"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"time"
 )
 
+type Master struct {
+	url_chan    chan interface{}
+	idle_chan   chan *Node.Node
+	result_chan chan interface{}
+	redis       *RedisUtil.Redis
+}
 
-var Idle=make(map[string]*Node.Node)
-var Working=make(map[string]*Node.Node)
-var Task []interface{}
-var jobChan=make(chan string)
+// var url_chan = make(chan string, 100)
+// var idle_chan = make(chan *Node.Node, 100)
+// var result_chan = make(chan string, 100)
+// var redis RedisUtil.Redis
 
-/**
- * @description:根据节点信息设置空闲队列 
- * @param  {*}
- * @return {*}
- * @param {*Node.Node} node
- */
-func SetIdle(node *Node.Node){
-	if _,ok :=Working[node.Id];!ok{
-		log.Printf("node dosen't exist %s\n",node.Id)
+func InitMaster() (m *Master) {
+	redis, err := RedisUtil.InitRedis()
+	if err != nil {
+		//Todo:宕机
+		log.Println("Master-GetUrl:" + err.Error())
+		return nil
+	}
+	m = &Master{
+		url_chan:    make(chan interface{}, 100),
+		idle_chan:   make(chan *Node.Node, 100),
+		result_chan: make(chan interface{}, 100),
+		redis:       redis,
+	}
+	return
+}
+
+func (m *Master) GetUrl() {
+	url, err := m.redis.LPop("url")
+	if err != nil {
+		log.Println("Master-GetUrl:" + err.Error())
 		return
 	}
-	delete(Working,node.Id)
-	Idle[node.Id]=node
+	m.url_chan <- url
 }
 
 /**
- * @description:根据节点信息设置工作队列
- * @param  {*}
- * @return {*}
- * @param {*Node.Node} node
- */
-func SetWorking(node *Node.Node){
-	if _,ok :=Working[node.Id];!ok{
-		log.Printf("Working dosen't exist %s\n",node.Id)
-		return
-	}
-	delete(Idle,node.Id)
-	Working[node.Id]=node	
-}
-
-/**
- * @description:从redis心跳中取出一个Node类型，同步其状态
- * @param  {*}
- * @return {*}
- * @param {*} Node
- */
-func SetStatus(node *Node.Node){
-	if node ==nil{
-		return
-	}
-	if node.Status==NodeConstants.Idle{
-		SetIdle(node)
-		return
-	}
-	SetWorking(node)
-}
-
-/**
- * @description: 从空闲队列中取一个节点绑定任务
- * @param  {*}
- * @return {*}
- * @param {interface{}} job
- */
-func ToWork(job interface{}) {
-	if len(Idle) == 0 {
-		log.Println("All Nodes are working!")
-		return 
-	}
-	for _,node:=range Idle{
-		if node==nil{
-			continue
-		}
-		r,err:=RedisUtil.InitRedis()
-		if err!=nil{
-			log.Println("Redis init failed!")
-			return
-		}
-		r.RPush("job",job)
-		break
-	} 
-}
-
-/**
- * @description:获得urls，通过信号量传递 
+ * @description: 将目标url发送给节点机器
  * @param  {*}
  * @return {*}
  */
-func GetUrls(){
-	r,err:=RedisUtil.InitRedis()
-	if err!=nil{
-		log.Println("LoadUrlsFromRedis:"+err.Error())
-		return
-	}
-	urls,err:=r.RPop("url")
-	jobChan<-urls
-}
-
-/**
- * @description:从redis中加载url 
- * @param  {*}
- * @return {*}
- */
-func LoadUrlsFromRedis(jobChan chan string){
-	for{
-		select {
-		// 通道实现计时器功能
-		case <-time.After(time.Duration(2)):
-			// 涉及redis的读写(耗时)操作,协程处理
-			go GetUrls()
-		}
-	}
-}
-
-/**
- * @description: 运行master节点
- * @param  {*}
- * @return {*}
- */
-func RunMaster(){
+func (m *Master) CrawlByUrl() {
 	for {
 		select {
-		case condition:
-			
+		case <-time.After(time.Duration(1)):
+			url := <-m.url_chan
+			// Todo:替换成加减器?
+			<-m.idle_chan
+			m.redis.RPush("Jobs", &Data.Job{
+				Type: "Crawl",
+				Url:  url.(string),
+			})
 		}
 	}
+}
+
+/**
+ * @description:从redis中获取对应任务返回的结果
+ * @param  {*}
+ * @return {*}
+ */
+func (m *Master) GetResult() {
+	for {
+		select {
+		case <-time.After(time.Duration(1)):
+			result, err := m.redis.LPop("result")
+			if err != nil {
+				log.Println("Master-GetResult:", err.Error())
+				return
+			}
+			m.result_chan <- result
+		}
+	}
+}
+
+/**
+ * @description:对收到result的后续操作
+ * @param  {*}
+ * @return {*}
+ */
+func (m *Master) HandleResult() {
+	for {
+		select {
+		case <-time.After(time.Duration(1)):
+			// Todo:拿到返回的result进行后续操作
+			<-m.result_chan
+		}
+	}
+}
+
+/**
+ * @description:每两秒获取一次Url
+ * @param  {*}
+ * @return {*}
+ */
+func (m *Master) LoadUrlsFromRedis() {
+	for {
+		select {
+		case <-time.After(time.Duration(2)):
+			go m.GetUrl()
+		}
+	}
+}
+
+/**
+ * @description: 运行redis
+ * @param  {*}
+ * @return {*}
+ */
+func (m *Master) RunMaster() {
+	go m.LoadUrlsFromRedis()
+	go m.CrawlByUrl()
+	go m.GetResult()
 }

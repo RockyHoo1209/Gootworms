@@ -2,7 +2,7 @@
  * @Description:封装redis操作(redis实rpc通信)
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-04-02 11:15:00
+ * @LastEditTime: 2021-04-06 12:29:41
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -103,7 +103,7 @@ func (r *Redis) Ping() error {
 	return err
 }
 
-func (r *Redis) LPop(collection string) (string, error) {
+func (r *Redis) LPop(collection string) (interface{}, error) {
 	con := r.pool.Get()
 	defer con.Close()
 	res, err := redis.String(con.Do("LPOP", collection))

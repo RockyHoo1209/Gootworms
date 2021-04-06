@@ -2,7 +2,7 @@
  * @Description:心跳模块,用来向mater节点发送该节点的工作状态
  * @Author: Rocky Hoo
  * @Date: 2021-03-26 08:10:33
- * @LastEditTime: 2021-03-26 19:30:18
+ * @LastEditTime: 2021-04-05 17:31:46
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -11,7 +11,7 @@ package Node
 
 import (
 	"log"
-	"main/src/Enum/NodeConstants"
+	"main/src/Data/Enum/NodeConstants"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"net"
 )
@@ -48,10 +48,10 @@ func (node *Node) SetStatus(status uint) {
 func InitNode() (*Node, error) {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	netInterface := netInterfaces[0]
 	node.Status = NodeConstants.Idle
 	node.Id = netInterface.HardwareAddr.String()
-	return node,nil
+	return node, nil
 }
