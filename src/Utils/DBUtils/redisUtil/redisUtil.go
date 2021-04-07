@@ -11,7 +11,7 @@ package RedisUtil
 
 import (
 	"log"
-	"runtime/debug"
+	// "runtime/debug"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -67,7 +67,7 @@ func (r *Redis) RPush(collection string, value interface{}) error {
 	defer con.Close()
 	if _, err := con.Do("RPUSH", collection, value); err != nil {
 		log.Println(err.Error())
-		debug.PrintStack()
+		// debug.PrintStack()
 		return err
 	}
 	return nil
@@ -78,7 +78,7 @@ func (r *Redis) LPush(collection string, value interface{}) error {
 	defer con.Close()
 	if _, err := con.Do("LPUSH", collection, value); err != nil {
 		log.Println(err)
-		debug.PrintStack()
+		// debug.PrintStack()
 		return err
 	}
 	return nil
@@ -90,7 +90,7 @@ func (r *Redis) RPop(collection string) (string, error) {
 	res, err := redis.String(con.Do("RPOP", collection))
 	if err != nil {
 		log.Println(err)
-		debug.PrintStack()
+		// debug.PrintStack()
 		return "", err
 	}
 	return res, nil
@@ -109,7 +109,7 @@ func (r *Redis) LPop(collection string) (interface{}, error) {
 	res, err := redis.String(con.Do("LPOP", collection))
 	if err != nil {
 		log.Println(err.Error())
-		debug.PrintStack()
+		// debug.PrintStack()
 		return "", err
 	}
 	return res, nil

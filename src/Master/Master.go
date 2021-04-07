@@ -12,22 +12,24 @@ package Master
 import (
 	"log"
 	"main/src/Data"
-	"main/src/Slave/Node"
+
+	// "main/src/Slave/Node"
 	"main/src/Utils/DBUtils/RedisUtil"
+	"sync"
 	"time"
+
+	// "github.com/spf13/viper"
 )
 
 type Master struct {
-	url_chan    chan interface{}
-	idle_chan   chan *Node.Node
-	result_chan chan interface{}
-	redis       *RedisUtil.Redis
+	url_chan    chan interface{} //读取url同步通信
+	// Todo:讨论用哪种方法实现更好?缓冲通道?
+	// work_chan   chan *Node.Node  //读取空闲节点同步通信
+	work_count   sync.WaitGroup  //记录工作数量同步通信
+	result_chan chan interface{} //爬取结果同步通信
+	redis       *RedisUtil.Redis //初始化redis
+	wg          sync.WaitGroup
 }
-
-// var url_chan = make(chan string, 100)
-// var idle_chan = make(chan *Node.Node, 100)
-// var result_chan = make(chan string, 100)
-// var redis RedisUtil.Redis
 
 func InitMaster() (m *Master) {
 	redis, err := RedisUtil.InitRedis()
@@ -37,9 +39,9 @@ func InitMaster() (m *Master) {
 		return nil
 	}
 	m = &Master{
-		url_chan:    make(chan interface{}, 100),
-		idle_chan:   make(chan *Node.Node, 100),
-		result_chan: make(chan interface{}, 100),
+		url_chan:    make(chan interface{}),
+		// work_chan:   make(chan *Node.Node),
+		result_chan: make(chan interface{}),
 		redis:       redis,
 	}
 	return
@@ -49,6 +51,8 @@ func (m *Master) GetUrl() {
 	url, err := m.redis.LPop("url")
 	if err != nil {
 		log.Println("Master-GetUrl:" + err.Error())
+		url="www.bilibili.com"
+		m.url_chan<-url//viper.GetString("server.firstUrl")
 		return
 	}
 	m.url_chan <- url
@@ -60,12 +64,14 @@ func (m *Master) GetUrl() {
  * @return {*}
  */
 func (m *Master) CrawlByUrl() {
+	defer m.wg.Done()
 	for {
 		select {
 		case <-time.After(time.Duration(1)):
 			url := <-m.url_chan
+			log.Println("sending to slaves:",url)
 			// Todo:替换成加减器?
-			<-m.idle_chan
+			m.work_count.Add(1)
 			m.redis.RPush("Jobs", &Data.Job{
 				Type: "Crawl",
 				Url:  url.(string),
@@ -80,15 +86,18 @@ func (m *Master) CrawlByUrl() {
  * @return {*}
  */
 func (m *Master) GetResult() {
+	defer m.wg.Done()
 	for {
 		select {
 		case <-time.After(time.Duration(1)):
-			result, err := m.redis.LPop("result")
+			log.Println("Getting result...")
+			result, err := m.redis.LPop("Result")
 			if err != nil {
 				log.Println("Master-GetResult:", err.Error())
-				return
+				continue
 			}
 			m.result_chan <- result
+			m.work_count.Done()
 		}
 	}
 }
@@ -114,10 +123,13 @@ func (m *Master) HandleResult() {
  * @return {*}
  */
 func (m *Master) LoadUrlsFromRedis() {
+	defer m.wg.Done()
 	for {
 		select {
 		case <-time.After(time.Duration(2)):
-			go m.GetUrl()
+			log.Println("loading urls...")
+			m.GetUrl()
+			log.Println("got url")
 		}
 	}
 }
@@ -128,7 +140,12 @@ func (m *Master) LoadUrlsFromRedis() {
  * @return {*}
  */
 func (m *Master) RunMaster() {
+	m.wg.Add(1)
 	go m.LoadUrlsFromRedis()
+	m.wg.Add(1)
 	go m.CrawlByUrl()
+	m.wg.Add(1)
 	go m.GetResult()
+	// 阻塞直到waitgroup计数器减到0
+	m.wg.Wait()
 }

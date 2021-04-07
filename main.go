@@ -12,6 +12,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"main/src/Master"
+	"main/src/Slave/Spider"
 	"os"
 )
 
@@ -23,7 +25,14 @@ func main() {
 	switch os.Args[1] {
 	case "master":
 		log.Printf("starting master...\n")
+		Master.InitMaster().RunMaster()
 	case "worker":
 		log.Printf("stsarting worker...\n")
+		s:=Spider.InitSpider()
+		if s!=nil{
+			s.Wg.Add(1)
+			go s.RunSpider()
+			s.Wg.Wait()
+		}
 	}
 }

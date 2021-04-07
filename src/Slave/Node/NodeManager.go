@@ -19,9 +19,8 @@ import (
 type Node struct {
 	Id     string //用mac地址代替节点id
 	Status uint   //标识当前工作状态
+	NetInterface net.Interface
 }
-
-var node = new(Node)
 
 /**
  * @description: 发送心跳
@@ -50,8 +49,10 @@ func InitNode() (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	netInterface := netInterfaces[0]
-	node.Status = NodeConstants.Idle
-	node.Id = netInterface.HardwareAddr.String()
-	return node, nil
+	return &Node{
+		// Todo:Id 改成mac地址或用uuid实现
+		Id:     "1313",
+		NetInterface :netInterfaces[0],
+		Status :NodeConstants.Idle,
+	}, nil
 }

@@ -11,4 +11,7 @@ mongo:
   port: 27017
   username: ""
   source: ""
+
+sserver:
+  firstUrl: wwww.bilibili.com
   
