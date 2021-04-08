@@ -10,12 +10,12 @@
 package Spider
 
 import (
+	"encoding/json"
 	"log"
 	"main/src/Data"
 	"main/src/Utils/ChromeDriverUtil"
 	"sync"
 
-	// "main/src/Utils/DBUtils/MongoUtil"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"main/src/Utils/LinksUtil"
 	"time"
@@ -52,6 +52,7 @@ func (s *Spider) Crawl(url, resp string) {
 		s.result_chan <- &Data.Result{
 			Items:   nil,
 			Suburls: nil,
+			Resp: resp,
 		}
 		return
 	}
@@ -60,14 +61,15 @@ func (s *Spider) Crawl(url, resp string) {
 		s.result_chan <- &Data.Result{
 			Items:   items,
 			Suburls: subUrls,
+			Resp: resp,
 		}
 		return
 	}
-	// MongoUtil.InsertResponse(url, resp)
-	// MongoUtil.InsertUrls(subUrls)
+
 	s.result_chan <- &Data.Result{
 		Items:   items,
 		Suburls: subUrls,
+		Resp: resp,
 	}
 }
 
@@ -86,11 +88,8 @@ func (s *Spider) RunSpider() {
 				log.Println("Spider-RunSpider:Lpop error!", err.Error())
 				continue
 			}
-			task := job.(Data.Job)
-			// task:=&Data.Job{
-			// 	Type: "Crawl",
-			// 	Url:  "https://www.bilibili.com",
-			// }
+			var task *Data.Job
+			json.Unmarshal([]byte(job.(string)),&task)
 			resp, err := ChromeDriverUtil.StartChrome(task.Url)
 			if err != nil {
 				log.Println("Spider-RunSpider:ChromeDriver Error!")
@@ -98,7 +97,11 @@ func (s *Spider) RunSpider() {
 			}
 			go s.Crawl(task.Url, resp)
 			result := <-s.result_chan
-			s.redis.RPush("Result", result)
+			jsonbyte,err:=json.Marshal(&result)
+			if err!=nil{
+				log.Println("Spider-RunSpider:",err.Error())
+			}
+			s.redis.RPush("Result",jsonbyte)
 		}
 	}
 }

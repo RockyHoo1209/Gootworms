@@ -11,13 +11,14 @@ package Spider
 
 import (
 	// "main/src/Utils/ChromeDriverUtil"
-	// "main/src/Utils/DBUtils/MongoUtil"
-	// "main/src/Utils/DBUtils/MongoUtil"
+	"main/src/Utils/DBUtils/MongoUtil"
 	"testing"
 )
 
 func TestSpider(*testing.T) {
-	// MongoUtil.InitMongo()
+	MongoUtil.InitMongo()
 	s:=InitSpider()
-	s.RunSpider()
+	s.Wg.Add(1)
+	go s.RunSpider()
+	s.Wg.Wait()
 }

@@ -20,7 +20,8 @@ func ExtractUrls(resp string) ([]string, error) {
 	resp = strings.Replace(resp, " ", "", -1)
 	resp = strings.Replace(resp, "\n", "", -1)
 	//匹配所有链接形式
-	reg, err := regexp.Compile("<ahref=\"([^\"]+)\"[^>]*>[^<]+</a>")
+	// reg, err := regexp.Compile("<ahref=\"([^\"]+)\"[^>]*>[^<]+</a>")
+	reg, err := regexp.Compile("((http[s]{0,1})://)(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?")
 	if err != nil {
 		log.Printf("reg parse error:%s\n", err.Error())
 		return nil, err

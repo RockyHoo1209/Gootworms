@@ -10,25 +10,27 @@
 package Master
 
 import (
+	"encoding/json"
 	"log"
 	"main/src/Data"
 
 	// "main/src/Slave/Node"
+	"main/src/Utils/DBUtils/MongoUtil"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"sync"
 	"time"
-
 	// "github.com/spf13/viper"
 )
 
 type Master struct {
-	url_chan    chan interface{} //读取url同步通信
+	url_chan chan interface{} //读取url同步通信
 	// Todo:讨论用哪种方法实现更好?缓冲通道?
 	// work_chan   chan *Node.Node  //读取空闲节点同步通信
-	work_count   sync.WaitGroup  //记录工作数量同步通信
+	work_count  sync.WaitGroup   //记录工作数量同步通信
 	result_chan chan interface{} //爬取结果同步通信
 	redis       *RedisUtil.Redis //初始化redis
 	wg          sync.WaitGroup
+	visited     map[string]int
 }
 
 func InitMaster() (m *Master) {
@@ -39,23 +41,44 @@ func InitMaster() (m *Master) {
 		return nil
 	}
 	m = &Master{
-		url_chan:    make(chan interface{}),
+		url_chan: make(chan interface{}),
 		// work_chan:   make(chan *Node.Node),
 		result_chan: make(chan interface{}),
 		redis:       redis,
+		visited:     make(map[string]int),
 	}
 	return
 }
 
-func (m *Master) GetUrl() {
-	url, err := m.redis.LPop("url")
+
+func (m *Master)IsDuplicate(url string) bool{
+	if _,ok:=m.visited[url];ok{
+		return false
+	}
+	m.visited[url]=1
+	return true
+}
+
+func (m *Master) GetResult() {
+	result, err := m.redis.LPop("Result")
 	if err != nil {
 		log.Println("Master-GetUrl:" + err.Error())
-		url="www.bilibili.com"
-		m.url_chan<-url//viper.GetString("server.firstUrl")
+		url := "https://www.bilibili.com"
+		if m.IsDuplicate(url){
+			m.url_chan <- url //viper.GetString("server.firstUrl")
+			MongoUtil.InsertUrls(url)
+		}
 		return
 	}
-	m.url_chan <- url
+	var resultObj *Data.Result
+	json.Unmarshal([]byte(result.(string)), &resultObj)
+	for _, url := range resultObj.Suburls {
+		if m.IsDuplicate(url){
+			m.url_chan <- url
+			MongoUtil.InsertUrls(url)
+			MongoUtil.InsertResponse(url,resultObj.Resp)
+		}
+	}
 }
 
 /**
@@ -69,13 +92,17 @@ func (m *Master) CrawlByUrl() {
 		select {
 		case <-time.After(time.Duration(1)):
 			url := <-m.url_chan
-			log.Println("sending to slaves:",url)
+			log.Println("sending to slaves:", url)
 			// Todo:替换成加减器?
 			m.work_count.Add(1)
-			m.redis.RPush("Jobs", &Data.Job{
+			jsonByte, err := json.Marshal(&Data.Job{
 				Type: "Crawl",
 				Url:  url.(string),
 			})
+			if err != nil {
+				log.Println("Master-Crawl:", err.Error())
+			}
+			m.redis.RPush("Jobs", jsonByte)
 		}
 	}
 }
@@ -85,22 +112,22 @@ func (m *Master) CrawlByUrl() {
  * @param  {*}
  * @return {*}
  */
-func (m *Master) GetResult() {
-	defer m.wg.Done()
-	for {
-		select {
-		case <-time.After(time.Duration(1)):
-			log.Println("Getting result...")
-			result, err := m.redis.LPop("Result")
-			if err != nil {
-				log.Println("Master-GetResult:", err.Error())
-				continue
-			}
-			m.result_chan <- result
-			m.work_count.Done()
-		}
-	}
-}
+// func (m *Master) GetResult() {
+// 	defer m.wg.Done()
+// 	for {
+// 		select {
+// 		case <-time.After(time.Duration(1)):
+// 			log.Println("Getting result...")
+// 			result, err := m.redis.LPop("Result")
+// 			if err != nil {
+// 				log.Println("Master-GetResult:", err.Error())
+// 				continue
+// 			}
+// 			m.result_chan <- result
+// 			m.work_count.Done()
+// 		}
+// 	}
+// }
 
 /**
  * @description:对收到result的后续操作
@@ -112,7 +139,10 @@ func (m *Master) HandleResult() {
 		select {
 		case <-time.After(time.Duration(1)):
 			// Todo:拿到返回的result进行后续操作
-			<-m.result_chan
+			// Result:=<-m.result_chan
+			// var resultObj *Data.Result
+			// json.Unmarshal([]byte(Result.(string)),&resultObj)
+			// m.redis.RPush("Jobs")
 		}
 	}
 }
@@ -128,7 +158,7 @@ func (m *Master) LoadUrlsFromRedis() {
 		select {
 		case <-time.After(time.Duration(2)):
 			log.Println("loading urls...")
-			m.GetUrl()
+			m.GetResult()
 			log.Println("got url")
 		}
 	}
@@ -144,8 +174,8 @@ func (m *Master) RunMaster() {
 	go m.LoadUrlsFromRedis()
 	m.wg.Add(1)
 	go m.CrawlByUrl()
-	m.wg.Add(1)
-	go m.GetResult()
+	// m.wg.Add(1)
+	// go m.GetResult()
 	// 阻塞直到waitgroup计数器减到0
 	m.wg.Wait()
 }

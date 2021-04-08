@@ -44,23 +44,18 @@ func GetCollection(collectionName string) (session *mgo.Session, collection *mgo
 	return session, collection
 }
 
-func InsertUrls(urls []string) {
+func InsertUrls(url string) {
 	session, collection := GetCollection("Urls")
 	defer session.Close()
-	for _, url := range urls {
-		if url == "" {
-			continue
-		}
-		err := collection.Insert(&Url{
-			Id:  bson.NewObjectId(),
-			Url: url,
-		})
-		if err != nil {
-			log.Printf("Url insert error:%s\n", err.Error())
-			continue
-		}
-		log.Printf("Url:%s Insert Success!\n", url)
+	err := collection.Insert(&Url{
+		Id:  bson.NewObjectId(),
+		Url: url,
+	})
+	if err != nil {
+		log.Printf("Url insert error:%s\n", err.Error())
+		return
 	}
+	log.Printf("Url:%s Insert Success!\n", url)
 }
 
 func InsertResponse(url, response string) {
