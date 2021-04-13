@@ -22,7 +22,8 @@ import (
  * @param {string} url
  */
 func Download(url string) (string, error) {
-	resp, err := ChromeDriverUtil.StartChrome(url)
+	ChromeDriverUtil.InitChrome()
+	resp, err := ChromeDriverUtil.ParseUrl(url)
 	if err != nil {
 		log.Println(err)
 		return "", err

@@ -19,45 +19,56 @@ import (
 	"github.com/tebeka/selenium/chrome"
 )
 
-// StartChrome 启动谷歌浏览器headless模式
-func StartChrome(targetUrl string) (string, error) {
+type Service struct {
+	opts       []selenium.ServiceOption
+	caps       selenium.Capabilities
+	imagCaps   map[string]interface{}
+	chromeCaps chrome.Capabilities
+}
 
-	opts := []selenium.ServiceOption{}
-
-	caps := selenium.Capabilities{
-
-		"browserName": "chrome",
+var chrome_service *Service
+// InitChrome 初始化谷歌浏览器
+func InitChrome(){
+	if chrome_service!=nil{
+		log.Println("ChromeDriverUtil-InitChrome:Chrome is already inited!")
+		return
 	}
+	chrome_service = &Service{
+		opts: []selenium.ServiceOption{},
+		caps: selenium.Capabilities{
+			"browserName": "chrome",
+		},
+		imagCaps: map[string]interface{}{
+			"profile.managed_default_content_settings.images": 2,
+		},
+		chromeCaps: chrome.Capabilities{
+			Prefs: map[string]interface{}{
+				"profile.managed_default_content_settings.images": 2,
+			},
+			Path: "",
 
-	// 禁止加载图片，加快渲染速度
+			Args: []string{
 
-	imagCaps := map[string]interface{}{
+				"--headless", // 设置Chrome无头模式
 
-		"profile.managed_default_content_settings.images": 2,
-	}
+				"--no-sandbox", //root模式下也可以运行
 
-	chromeCaps := chrome.Capabilities{
+				"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0.2 Safari/604.4.7", // 模拟user-agent，防反爬
 
-		Prefs: imagCaps,
-
-		Path: "",
-
-		Args: []string{
-
-			"--headless", // 设置Chrome无头模式
-
-			"--no-sandbox",
-
-			"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0.2 Safari/604.4.7", // 模拟user-agent，防反爬
-
+				"--disable-dev-shm-usage",
+			},
 		},
 	}
+}
 
-	caps.AddChrome(chromeCaps)
+
+//解析url
+func ParseUrl(targetUrl string)(string,error){
+	chrome_service.caps.AddChrome(chrome_service.chromeCaps)
 
 	// 启动chromedriver，端口号可自定义
 
-	service, err := selenium.NewChromeDriverService("/bin/chromedriver", 9516, opts...)
+	service, err := selenium.NewChromeDriverService("/bin/chromedriver", 9516, chrome_service.opts...)
 
 	if err != nil {
 
@@ -68,7 +79,7 @@ func StartChrome(targetUrl string) (string, error) {
 
 	// 调起chrome浏览器
 	//fmt.Sprintf("http://localhost:%d/wd/hub", 9516)
-	webDriver, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", 9516))
+	webDriver, err := selenium.NewRemote(chrome_service.caps, fmt.Sprintf("http://localhost:%d/wd/hub", 9516))
 	if err != nil {
 
 		// panic(err)

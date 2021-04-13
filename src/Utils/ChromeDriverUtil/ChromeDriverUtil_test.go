@@ -6,8 +6,9 @@ import (
 )
 
 func TestChromeDriverUtil(*testing.T) {
-	targetUrl := "https://www.bilibili.com/"
-	ret, err := StartChrome(targetUrl)
+	targetUrl := "https://cn.bing.com/"
+	InitChrome()
+	ret, err := ParseUrl(targetUrl)
 	if err != nil {
 		fmt.Print(err)
 	}

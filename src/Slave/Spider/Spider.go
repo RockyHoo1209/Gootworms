@@ -18,7 +18,7 @@ import (
 
 	"main/src/Utils/DBUtils/RedisUtil"
 	"main/src/Utils/LinksUtil"
-	"time"
+	// "time"
 )
 
 type Spider struct {
@@ -33,6 +33,7 @@ func InitSpider() *Spider {
 		log.Println("Init Redis Failed:", err.Error())
 		return nil
 	}
+	ChromeDriverUtil.InitChrome()
 	return &Spider{
 		redis:       redis,
 		result_chan: make(chan *Data.Result),
@@ -52,7 +53,7 @@ func (s *Spider) Crawl(url, resp string) {
 		s.result_chan <- &Data.Result{
 			Items:   nil,
 			Suburls: nil,
-			Resp: resp,
+			Resp:    resp,
 		}
 		return
 	}
@@ -61,7 +62,7 @@ func (s *Spider) Crawl(url, resp string) {
 		s.result_chan <- &Data.Result{
 			Items:   items,
 			Suburls: subUrls,
-			Resp: resp,
+			Resp:    resp,
 		}
 		return
 	}
@@ -69,7 +70,7 @@ func (s *Spider) Crawl(url, resp string) {
 	s.result_chan <- &Data.Result{
 		Items:   items,
 		Suburls: subUrls,
-		Resp: resp,
+		Resp:    resp,
 	}
 }
 
@@ -81,27 +82,24 @@ func (s *Spider) Crawl(url, resp string) {
 func (s *Spider) RunSpider() {
 	defer s.Wg.Done()
 	for {
-		select {
-		case <-time.After(time.Duration(1)):
-			job, err := s.redis.LPop("Jobs")
-			if err != nil {
-				log.Println("Spider-RunSpider:Lpop error!", err.Error())
-				continue
-			}
-			var task *Data.Job
-			json.Unmarshal([]byte(job.(string)),&task)
-			resp, err := ChromeDriverUtil.StartChrome(task.Url)
-			if err != nil {
-				log.Println("Spider-RunSpider:ChromeDriver Error!")
-				continue
-			}
-			go s.Crawl(task.Url, resp)
-			result := <-s.result_chan
-			jsonbyte,err:=json.Marshal(&result)
-			if err!=nil{
-				log.Println("Spider-RunSpider:",err.Error())
-			}
-			s.redis.RPush("Result",jsonbyte)
+		job, err := s.redis.BLPop("Jobs", 0)
+		if err != nil {
+			log.Println("Spider-RunSpider:Lpop error!", err.Error())
+			continue
 		}
+		var task *Data.Job
+		json.Unmarshal([]byte(job), &task)
+		resp, err := ChromeDriverUtil.ParseUrl(task.Url)
+		if err != nil {
+			log.Println("Spider-RunSpider:ChromeDriver Error!")
+			continue
+		}
+		go s.Crawl(task.Url, resp)
+		result := <-s.result_chan
+		jsonbyte, err := json.Marshal(&result)
+		if err != nil {
+			log.Println("Spider-RunSpider:", err.Error())
+		}
+		s.redis.RPush("Result", jsonbyte)
 	}
 }

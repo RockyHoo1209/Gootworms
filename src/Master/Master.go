@@ -2,7 +2,7 @@
  * @Description: Master节点的编写
  * @Author: Rocky Hoo
  * @Date: 2021-04-05 00:01:58
- * @LastEditTime: 2021-04-06 12:34:03
+ * @LastEditTime: 2021-04-12 23:08:50
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -50,33 +50,37 @@ func InitMaster() (m *Master) {
 	return
 }
 
-
-func (m *Master)IsDuplicate(url string) bool{
-	if _,ok:=m.visited[url];ok{
+func (m *Master) IsDuplicate(url string) bool {
+	if _, ok := m.visited[url]; ok {
 		return false
 	}
-	m.visited[url]=1
+	m.visited[url] = 1
 	return true
 }
 
+/**
+ * @description:从redis中获取
+ * @param  {*}
+ * @return {*}
+ */
 func (m *Master) GetResult() {
-	result, err := m.redis.LPop("Result")
+	result, err := m.redis.BLPop("Result", 0)
 	if err != nil {
 		log.Println("Master-GetUrl:" + err.Error())
-		url := "https://www.bilibili.com"
-		if m.IsDuplicate(url){
+		url := "https://www.dandanzan.cc"
+		if m.IsDuplicate(url) {
 			m.url_chan <- url //viper.GetString("server.firstUrl")
 			MongoUtil.InsertUrls(url)
 		}
 		return
 	}
 	var resultObj *Data.Result
-	json.Unmarshal([]byte(result.(string)), &resultObj)
+	json.Unmarshal([]byte(result), &resultObj)
 	for _, url := range resultObj.Suburls {
-		if m.IsDuplicate(url){
+		if m.IsDuplicate(url) {
 			m.url_chan <- url
 			MongoUtil.InsertUrls(url)
-			MongoUtil.InsertResponse(url,resultObj.Resp)
+			MongoUtil.InsertResponse(url, resultObj.Resp)
 		}
 	}
 }
@@ -107,33 +111,6 @@ func (m *Master) CrawlByUrl() {
 	}
 }
 
-/**
- * @description:从redis中获取对应任务返回的结果
- * @param  {*}
- * @return {*}
- */
-// func (m *Master) GetResult() {
-// 	defer m.wg.Done()
-// 	for {
-// 		select {
-// 		case <-time.After(time.Duration(1)):
-// 			log.Println("Getting result...")
-// 			result, err := m.redis.LPop("Result")
-// 			if err != nil {
-// 				log.Println("Master-GetResult:", err.Error())
-// 				continue
-// 			}
-// 			m.result_chan <- result
-// 			m.work_count.Done()
-// 		}
-// 	}
-// }
-
-/**
- * @description:对收到result的后续操作
- * @param  {*}
- * @return {*}
- */
 func (m *Master) HandleResult() {
 	for {
 		select {
@@ -155,12 +132,9 @@ func (m *Master) HandleResult() {
 func (m *Master) LoadUrlsFromRedis() {
 	defer m.wg.Done()
 	for {
-		select {
-		case <-time.After(time.Duration(2)):
-			log.Println("loading urls...")
-			m.GetResult()
-			log.Println("got url")
-		}
+		log.Println("loading urls...")
+		m.GetResult()
+		log.Println("got url")
 	}
 }
 
