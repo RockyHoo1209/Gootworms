@@ -14,27 +14,20 @@ import (
 	"log"
 	"main/src/Master"
 	"main/src/Slave/Spider"
+	"main/src/Utils/DBUtils/MongoUtil"
 	"os"
 	"runtime"
 )
+
 var runType string
 
+
 /**
- * @description: 程序崩溃后重新运行
+ * @description: 应用重启
  * @param  {*}
  * @return {*}
  */
-func protectRun() {
-	defer func() {
-		if err := recover(); err != nil {
-			switch err.(type) {
-			case runtime.Error:
-				log.Println("runtime error!")
-			default:
-				log.Println("unknown error:", err)
-			}
-		}
-	}()
+func reStart() {
 	switch runType {
 	case "worker":
 		runWorker()
@@ -46,13 +39,33 @@ func protectRun() {
 }
 
 /**
+ * @description: 程序崩溃后重新运行
+ * @param  {*}
+ * @return {*}
+ */
+func protectRun() {
+	defer func() {
+		if err := recover(); err != nil {
+			switch err.(type) {
+			case runtime.Error:
+				reStart()
+				log.Println("runtime error!")
+			default:
+				reStart()
+				log.Println("unknown error:", err)
+			}
+		}
+	}()
+}
+
+/**
  * @description: 节点机器启动运行
  * @param  {*}
  * @return {*}
  */
-func runWorker(){
-	log.Printf("stsarting worker...\n")
-	runType="worker"
+func runWorker() {
+	log.Printf("starting worker...\n")
+	runType = "worker"
 	s := Spider.InitSpider()
 	if s != nil {
 		s.Wg.Add(1)
@@ -66,14 +79,15 @@ func runWorker(){
  * @param  {*}
  * @return {*}
  */
-func runMaster(){
+func runMaster() {
 	log.Printf("starting master...\n")
-	runType="master"
+	runType = "master"
+	MongoUtil.InitMongo()
 	Master.InitMaster().RunMaster()
 }
 
 func main() {
-	protectRun()
+	go protectRun()
 	if len(os.Args) < 2 {
 		fmt.Printf("input helper to see the validate args!\n")
 		return

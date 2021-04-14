@@ -31,7 +31,7 @@ var RedisClient *Redis
  * @return {*}
  */
 func NewRedisPool() *redis.Pool {
-	var address = "192.168.0.102" //viper.GetString("redis.address")
+	var address = "192.168.0.103" //viper.GetString("redis.address")
 	var password = ""         //viper.GetString("redis.password")
 	var database = "1"        //viper.GetString("redis.database")
 	var port = "6379"         //viper.GetString("redis.port")
