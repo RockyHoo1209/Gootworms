@@ -2,7 +2,7 @@
  * @Description: 负责解析页面的主要工作
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 14:51:53
- * @LastEditTime: 2021-04-07 09:41:46
+ * @LastEditTime: 2021-04-20 08:59:37
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -14,6 +14,7 @@ import (
 	"log"
 	"main/src/Data"
 	"main/src/Utils/ChromeDriverUtil"
+	"main/src/Utils/CronUtil"
 	"sync"
 
 	"main/src/Utils/DBUtils/RedisUtil"
@@ -47,8 +48,8 @@ func InitSpider() *Spider {
  * @param {*} url
  * @param {string} resp
  */
-func (s *Spider) Crawl(url, resp string) {
-	items, err := LinksUtil.ExtractItems(resp, "")
+func (s *Spider) Crawl(url, resp, regex string) {
+	items, err := LinksUtil.ExtractItems(resp, regex)
 	if err != nil {
 		s.result_chan <- &Data.Result{
 			Items:   nil,
@@ -75,31 +76,51 @@ func (s *Spider) Crawl(url, resp string) {
 }
 
 /**
- * @description:运行爬虫
+ * @description:单次运行爬虫
  * @param  {*}
  * @return {*}
  */
 func (s *Spider) RunSpider() {
 	defer s.Wg.Done()
-	for {
-		job, err := s.redis.BLPop("Jobs", 0)
-		if err != nil {
-			log.Println("Spider-RunSpider:Lpop error!", err.Error())
-			continue
-		}
-		var task *Data.Job
-		json.Unmarshal([]byte(job), &task)
-		resp, err := ChromeDriverUtil.ParseUrl(task.Url)
-		if err != nil {
-			log.Println("Spider-RunSpider:ChromeDriver Error!")
-			continue
-		}
-		go s.Crawl(task.Url, resp)
-		result := <-s.result_chan
-		jsonbyte, err := json.Marshal(&result)
-		if err != nil {
-			log.Println("Spider-RunSpider:", err.Error())
-		}
-		s.redis.RPush("Result", jsonbyte)
+	regex := "^.*(日本|美国).*$"
+	job, err := s.redis.BLPop("Jobs", 0)
+	if err != nil {
+		log.Println("Spider-RunSpider:Lpop error!", err.Error())
+		return
 	}
+	var task *Data.Job
+
+	// json-string转结构体
+	json.Unmarshal([]byte(job), &task)
+
+	resp, err := ChromeDriverUtil.ParseUrl(task.Url)
+	if err != nil {
+		log.Println("Spider-RunSpider:ChromeDriver Error!")
+		return
+	}
+	go s.Crawl(task.Url, resp, regex)
+	result := <-s.result_chan
+	jsonbyte, err := json.Marshal(&result)
+	if err != nil {
+		log.Println("Spider-RunSpider:", err.Error())
+	}
+	s.redis.RPush("Result", jsonbyte)
+}
+
+/**
+ * @description: 爬虫周期性运行
+ * @param  {*}
+ * @return {*}
+ */
+func (s *Spider) RunInterval(Interval string) error {
+	if Interval=="daily"{
+		err:=CronUtil.RunDaily(s.RunSpider)
+		return err
+	}
+	if Interval=="weekly"{
+		err:=CronUtil.RunWeekly(s.RunSpider)
+		return err
+	}
+	err:=CronUtil.RunInterval(s.RunSpider,Interval)
+	return err
 }
