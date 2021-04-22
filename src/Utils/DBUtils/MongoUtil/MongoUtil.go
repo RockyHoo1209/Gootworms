@@ -2,7 +2,7 @@
  * @Description: MongoDB操作封装(单例,复用)
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 17:41:52
- * @LastEditTime: 2021-03-25 12:14:38
+ * @LastEditTime: 2021-04-22 12:41:20
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -11,6 +11,7 @@ package MongoUtil
 
 import (
 	"log"
+	"main/src/Utils/ConfigUtil"
 	"net"
 	"time"
 
@@ -73,11 +74,11 @@ func InsertResponse(url, response string) {
 }
 
 func InitMongo() {
-	MongoDBHost := "localhost"
-	MongoDBPort := "27017"
-	MongoDBDataBase := "Gootworms"
-	MongoDBUserName := ""
-	MongoDBPassword := ""
+	MongoDBHost := ConfigUtil.GetString("mongo.address")
+	MongoDBPort := ConfigUtil.GetString("mongo.port")
+	MongoDBDataBase := ConfigUtil.GetString("mongo.db")
+	MongoDBUserName := ConfigUtil.GetString("mongo.username")
+	MongoDBPassword := ConfigUtil.GetString("mongo.password")
 	//连接池的数量默认4096,开销的压力是比较大的
 	MongoDBPoolLimit := 100
 	MongoDBSource := ""

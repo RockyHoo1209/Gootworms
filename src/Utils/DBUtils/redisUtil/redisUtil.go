@@ -2,7 +2,7 @@
  * @Description:封装redis操作(redis实rpc通信)
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-04-19 22:48:34
+ * @LastEditTime: 2021-04-22 07:59:09
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -11,12 +11,11 @@ package RedisUtil
 
 import (
 	"log"
-	// "runtime/debug"
+	"main/src/Utils/ConfigUtil"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gomodule/redigo/redis"
-	// "github.com/spf13/viper"
 )
 
 type Redis struct {
@@ -31,10 +30,15 @@ var RedisClient *Redis
  * @return {*}
  */
 func NewRedisPool() *redis.Pool {
-	var address = "192.168.0.102" //viper.GetString("redis.address")
-	var password = ""         //viper.GetString("redis.password")
-	var database = "1"        //viper.GetString("redis.database")
-	var port = "6379"         //viper.GetString("redis.port")
+	// var address = "192.168.0.103" //viper.GetString("redis.address")
+	// var password = ""         //viper.GetString("redis.password")
+	// var database = "1"        //viper.GetString("redis.database")
+	// var port = "6379"         //viper.GetString("redis.port")	
+	
+	var address = ConfigUtil.GetString("redis.address")
+	var password = ConfigUtil.GetString("redis.password")
+	var database = ConfigUtil.GetString("redis.database")
+	var port = ConfigUtil.GetString("redis.port")
 	var redisUrl = ""
 	if password == "" {
 		redisUrl = "redis://" + address + ":" + port + "/" + database

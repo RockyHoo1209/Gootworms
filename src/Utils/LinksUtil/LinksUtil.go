@@ -15,13 +15,20 @@ import (
 	"strings"
 )
 
-func ExtractUrls(resp string) ([]string, error) {
-
+/**
+ * @description:
+ * @param  {*}
+ * @return {*}
+ * @param {*} resp
+ * @param {string} regexp_url:url正则匹配模式
+ */
+func ExtractUrls(resp, regexp_url string) ([]string, error) {
 	resp = strings.Replace(resp, " ", "", -1)
 	resp = strings.Replace(resp, "\n", "", -1)
 	//匹配所有链接形式
 	// reg, err := regexp.Compile("<ahref=\"([^\"]+)\"[^>]*>[^<]+</a>")
-	reg, err := regexp.Compile("((http[s]{0,1})://)(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?")
+	// reg, err := regexp.Compile("((http[s]{0,1})://)(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?")
+	reg, err := regexp.Compile(regexp_url)
 	if err != nil {
 		log.Printf("reg parse error:%s\n", err.Error())
 		return nil, err

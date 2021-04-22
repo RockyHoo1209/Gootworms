@@ -14,6 +14,7 @@ import (
 	"log"
 	"main/src/Master"
 	"main/src/Slave/Spider"
+	"main/src/Utils/ConfigUtil"
 	"main/src/Utils/DBUtils/MongoUtil"
 	"os"
 	"runtime"
@@ -69,7 +70,8 @@ func runWorker() {
 	s := Spider.InitSpider()
 	if s != nil {
 		s.Wg.Add(1)
-		go s.RunSpider()
+		// 设置1分钟运行一次爬虫
+		go s.RunInterval("1m")
 		s.Wg.Wait()
 	}
 }
@@ -87,6 +89,7 @@ func runMaster() {
 }
 
 func main() {
+	ConfigUtil.InitConfig("")
 	go protectRun()
 	if len(os.Args) < 2 {
 		fmt.Printf("input helper to see the validate args!\n")
@@ -98,4 +101,5 @@ func main() {
 	case "worker":
 		runWorker()
 	}
+	select{}
 }

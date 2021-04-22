@@ -14,12 +14,11 @@ import (
 	"log"
 	"main/src/Data"
 
-	// "main/src/Slave/Node"
+	"github.com/spf13/viper"
 	"main/src/Utils/DBUtils/MongoUtil"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"sync"
 	"time"
-	// "github.com/spf13/viper"
 )
 
 type Master struct {
@@ -67,9 +66,10 @@ func (m *Master) GetResult() {
 	result, err := m.redis.BLPop("Result", 0)
 	if err != nil {
 		log.Println("Master-GetUrl:" + err.Error())
-		url := "https://www.dandanzan.cc"
+		// url := "https://www.dandanzan.cc"
+		url := viper.GetString("server.firstUrl")
 		if m.IsDuplicate(url) {
-			m.url_chan <- url //viper.GetString("server.firstUrl")
+			m.url_chan <- url
 			MongoUtil.InsertUrls(url)
 		}
 		return

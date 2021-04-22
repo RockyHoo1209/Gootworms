@@ -2,7 +2,7 @@
  * @Description: 负责解析页面的主要工作
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 14:51:53
- * @LastEditTime: 2021-04-20 08:59:37
+ * @LastEditTime: 2021-04-22 17:08:37
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -14,6 +14,7 @@ import (
 	"log"
 	"main/src/Data"
 	"main/src/Utils/ChromeDriverUtil"
+	"main/src/Utils/ConfigUtil"
 	"main/src/Utils/CronUtil"
 	"sync"
 
@@ -58,7 +59,8 @@ func (s *Spider) Crawl(url, resp, regex string) {
 		}
 		return
 	}
-	subUrls, err := LinksUtil.ExtractUrls(resp)
+	regexp_url:=ConfigUtil.GetString("client.rule.url_rule")
+	subUrls, err := LinksUtil.ExtractUrls(resp,regexp_url)
 	if err != nil {
 		s.result_chan <- &Data.Result{
 			Items:   items,
@@ -81,8 +83,7 @@ func (s *Spider) Crawl(url, resp, regex string) {
  * @return {*}
  */
 func (s *Spider) RunSpider() {
-	defer s.Wg.Done()
-	regex := "^.*(日本|美国).*$"
+	regex := ConfigUtil.GetString("client.rule.item_rule")
 	job, err := s.redis.BLPop("Jobs", 0)
 	if err != nil {
 		log.Println("Spider-RunSpider:Lpop error!", err.Error())
@@ -113,6 +114,7 @@ func (s *Spider) RunSpider() {
  * @return {*}
  */
 func (s *Spider) RunInterval(Interval string) error {
+	defer s.Wg.Done()
 	if Interval=="daily"{
 		err:=CronUtil.RunDaily(s.RunSpider)
 		return err

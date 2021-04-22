@@ -2,7 +2,7 @@
  * @Description:配置文件工具类
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 20:46:18
- * @LastEditTime: 2021-03-22 21:43:46
+ * @LastEditTime: 2021-04-22 07:56:28
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -17,21 +17,21 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	fileName string
-}
+// type Config struct {
+// 	fileName string
+// }
 
 /**
  * @description:初始化viper
  * @param  {*}
  * @return {*}
  */
-func (c *Config) init() error {
-	if c.fileName == "" {
+func InitConfig(fileName string) error {
+	if fileName == "" {
 		viper.SetConfigName("config")
 		viper.AddConfigPath("./conf")
 	} else {
-		viper.SetConfigName(c.fileName)
+		viper.SetConfigName(fileName)
 		viper.AddConfigPath("./")
 	}
 	viper.SetConfigType("yml")
@@ -42,6 +42,7 @@ func (c *Config) init() error {
 			return fmt.Errorf("Failed to read config file!")
 		}
 	}
+	WatchConfig()
 	return nil
 }
 
@@ -50,20 +51,30 @@ func (c *Config) init() error {
  * @param  {*}
  * @return {*}
  */
-func (c *Config) watchConfig() {
+func WatchConfig() {
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		log.Printf("Config file:%s changed!\n", e.Name)
 	})
 }
 
-func InitConfig(fileName string) error {
-	c := &Config{
-		fileName: fileName,
-	}
-	if err := c.init(); err != nil {
-		return err
-	}
-	c.watchConfig()
-	return nil
+func GetString(field_name string) string {
+	return viper.GetString(field_name)
 }
+
+/**
+ * @description:Config构造函数
+ * @param  {*}
+ * @return {*}
+ * @param {string} fileName:Config文件路径
+ */
+// func InitConfig(fileName string) error {
+// 	c := &Config{
+// 		fileName: fileName,
+// 	}
+// 	if err := c.init(); err != nil {
+// 		return err
+// 	}
+// 	c.watchConfig()
+// 	return nil
+// }
