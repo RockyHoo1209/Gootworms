@@ -1,0 +1,23 @@
+redis:
+  address: 192.168.0.103
+  password: ""
+  database: 1
+  port: 6379
+
+mongo:
+  address: 192.168.0.103
+  password: ""
+  db: "Gootworms"
+  port: 27017
+  username: ""
+  source: ""
+
+server:
+  firstUrl: https://news.qq.com/
+
+client:
+  rule:
+    url_rule: "((http[s]{0,1})://)(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?"
+    item_rule:
+      base: "window.DATA.*?({.*?})"
+      content: '<p(.)?class=.one-p.>(.*?)</p>'

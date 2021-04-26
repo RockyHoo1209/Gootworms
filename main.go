@@ -22,7 +22,6 @@ import (
 
 var runType string
 
-
 /**
  * @description: 应用重启
  * @param  {*}

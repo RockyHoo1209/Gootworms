@@ -10,6 +10,8 @@
 package LinksUtil
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -55,4 +57,50 @@ func ExtractItems(resp, regex string) ([]string, error) {
 	}
 	items := reg.FindAllString(resp, -1)
 	return items, nil
+}
+
+/**
+ * @description:根据给定正则表达式爬取对应item元素
+ * @param  {*}
+ * @return {*}
+ * @param {*} resp
+ * @param {string} regex
+ */
+func ExtractItems2Json(resp string, regexes map[string]interface{}) (string, error) {
+	resp = strings.Replace(resp, " ", "", -1)
+	resp = strings.Replace(resp, "\n", "", -1)
+	resp = strings.Replace(resp, "\t", "", -1)
+	mapResult:=map[string]interface{}{}
+	for k, v := range regexes {
+		reg, err := regexp.Compile(v.(string))
+		if err != nil {
+			log.Printf("reg parse error:%s\n", err.Error())
+			return "", err
+		}
+		items1 := reg.FindAllString(resp, -1)
+		fmt.Println(items1)
+		items := reg.FindAllStringSubmatch(resp, -1)
+		if k=="base" {
+			if err := json.Unmarshal([]byte(items[0][1]), &mapResult); err != nil {
+				log.Fatal(err)
+			}
+			continue
+		}
+		field_content:=""
+		for _,item:=range(items){
+			for i,c:=range(item){
+				if i==0{
+					continue
+				}
+				field_content+=c
+			}
+		}
+		mapResult[k]=field_content
+	}
+	b,err:=json.Marshal(mapResult)
+	if err!=nil{
+		log.Println(err)
+		return "",nil
+	}
+	return string(b), nil
 }

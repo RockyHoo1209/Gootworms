@@ -17,9 +17,11 @@ import (
 )
 
 func TestInitConfig(*testing.T) {
-	InitConfig("")
+	InitConfig("config")
 	address := viper.GetString("redis.address")
 	var port = viper.GetString("redis.port")
+	temp:=viper.GetStringMap("client.rule.item_rule")
+	fmt.Println(temp)
 	fmt.Print(address)
 	fmt.Print(port)
 }

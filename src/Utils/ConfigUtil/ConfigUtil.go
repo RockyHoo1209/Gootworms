@@ -62,19 +62,6 @@ func GetString(field_name string) string {
 	return viper.GetString(field_name)
 }
 
-/**
- * @description:Config构造函数
- * @param  {*}
- * @return {*}
- * @param {string} fileName:Config文件路径
- */
-// func InitConfig(fileName string) error {
-// 	c := &Config{
-// 		fileName: fileName,
-// 	}
-// 	if err := c.init(); err != nil {
-// 		return err
-// 	}
-// 	c.watchConfig()
-// 	return nil
-// }
+func GetStringMap(field_name string) map[string]interface{}{
+	return viper.GetStringMap(field_name)
+}

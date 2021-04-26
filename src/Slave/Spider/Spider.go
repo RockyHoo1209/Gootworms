@@ -2,7 +2,7 @@
  * @Description: 负责解析页面的主要工作
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 14:51:53
- * @LastEditTime: 2021-04-22 17:08:37
+ * @LastEditTime: 2021-04-26 20:38:23
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -20,7 +20,6 @@ import (
 
 	"main/src/Utils/DBUtils/RedisUtil"
 	"main/src/Utils/LinksUtil"
-	// "time"
 )
 
 type Spider struct {
@@ -47,10 +46,47 @@ func InitSpider() *Spider {
  * @param  {*}
  * @return {*}
  * @param {*} url
- * @param {string} resp
+ * @param {*} resp
+ * @param {string} regex:爬取网页内容的正则表达式
  */
 func (s *Spider) Crawl(url, resp, regex string) {
 	items, err := LinksUtil.ExtractItems(resp, regex)
+	if err != nil {
+		s.result_chan <- &Data.Result{
+			Items:   nil,
+			Suburls: nil,
+			Resp:    resp,
+		}
+		return
+	}
+	regexp_url:=ConfigUtil.GetString("client.rule.url_rule")
+	subUrls, err := LinksUtil.ExtractUrls(resp,regexp_url)
+	if err != nil {
+		s.result_chan <- &Data.Result{
+			Items:   items,
+			Suburls: subUrls,
+			Resp:    resp,
+		}
+		return
+	}
+
+	s.result_chan <- &Data.Result{
+		Items:   items,
+		Suburls: subUrls,
+		Resp:    resp,
+	}
+}
+
+/**
+ * @description: 将爬取到对应的url、resp存入mongodb
+ * @param  {*}
+ * @return {*}
+ * @param {*} url
+ * @param {*} resp
+ * @param {string} regex:爬取网页内容的正则表达式
+ */
+func (s *Spider) Crawl2(url, resp string, regex map[string]interface{}) {
+	items, err := LinksUtil.ExtractItems2Json(resp, regex)
 	if err != nil {
 		s.result_chan <- &Data.Result{
 			Items:   nil,
@@ -83,7 +119,8 @@ func (s *Spider) Crawl(url, resp, regex string) {
  * @return {*}
  */
 func (s *Spider) RunSpider() {
-	regex := ConfigUtil.GetString("client.rule.item_rule")
+	// regex := ConfigUtil.GetString("client.rule.item_rule")
+	regex := ConfigUtil.GetStringMap("client.rule.item_rule")
 	job, err := s.redis.BLPop("Jobs", 0)
 	if err != nil {
 		log.Println("Spider-RunSpider:Lpop error!", err.Error())
@@ -99,7 +136,8 @@ func (s *Spider) RunSpider() {
 		log.Println("Spider-RunSpider:ChromeDriver Error!")
 		return
 	}
-	go s.Crawl(task.Url, resp, regex)
+	// go s.Crawl(task.Url, resp, regex)
+	go s.Crawl2(task.Url, resp, regex)
 	result := <-s.result_chan
 	jsonbyte, err := json.Marshal(&result)
 	if err != nil {
