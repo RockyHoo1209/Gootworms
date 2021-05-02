@@ -86,7 +86,7 @@ func (s *Spider) Crawl(url, resp, regex string) {
  * @param {string} regex:爬取网页内容的正则表达式
  */
 func (s *Spider) Crawl2(url, resp string, regex map[string]interface{}) {
-	items, err := LinksUtil.ExtractItems2Json(resp, regex)
+	items, err := LinksUtil.ExtractItems2Map(url,resp, regex)
 	if err != nil {
 		s.result_chan <- &Data.Result{
 			Items:   nil,
@@ -119,7 +119,6 @@ func (s *Spider) Crawl2(url, resp string, regex map[string]interface{}) {
  * @return {*}
  */
 func (s *Spider) RunSpider() {
-	// regex := ConfigUtil.GetString("client.rule.item_rule")
 	regex := ConfigUtil.GetStringMap("client.rule.item_rule")
 	job, err := s.redis.BLPop("Jobs", 0)
 	if err != nil {

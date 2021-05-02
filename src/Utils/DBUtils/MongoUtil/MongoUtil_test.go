@@ -10,22 +10,27 @@
 package MongoUtil
 
 import (
+	"fmt"
 	"log"
+	"main/src/Utils/ConfigUtil"
 	"testing"
 )
 
 func TestMongoUtil(*testing.T) {
+	ConfigUtil.InitConfig("config")
 	InitMongo()
-	s, c := GetCollection("nodes")
-	defer s.Close()
-	data := map[string]string{"title": "MongoDB 教程",
+	for i:=1;i<=6;i++{
+	data := map[string]interface{}{
+		"key":"1",
+		// "_id":bson.NewObjectId(),
+		"title": "MongoDB 程"+fmt.Sprint(i),
 		"description": "MongoDB 是一个 Nosql 数据库",
 		"by":          "菜鸟教程",
-		"url":         "http://www.runoob.com",
+		"url":         "https://www.runoob.com",
 		"likes":       "100",
 	}
-	err := c.Insert(data)
-	if err != nil {
-		log.Fatal(err.Error())
+	err := Insert("nodes","1",data);if err!=nil{
+		log.Println(err.Error())	
+	}
 	}
 }

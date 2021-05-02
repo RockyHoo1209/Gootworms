@@ -11,7 +11,6 @@ package LinksUtil
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -27,6 +26,7 @@ import (
 func ExtractUrls(resp, regexp_url string) ([]string, error) {
 	resp = strings.Replace(resp, " ", "", -1)
 	resp = strings.Replace(resp, "\n", "", -1)
+	resp = strings.Replace(resp, "\t", "", -1)
 	//匹配所有链接形式
 	// reg, err := regexp.Compile("<ahref=\"([^\"]+)\"[^>]*>[^<]+</a>")
 	// reg, err := regexp.Compile("((http[s]{0,1})://)(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?")
@@ -50,6 +50,7 @@ func ExtractItems(resp, regex string) ([]string, error) {
 
 	resp = strings.Replace(resp, " ", "", -1)
 	resp = strings.Replace(resp, "\n", "", -1)
+	resp = strings.Replace(resp, "\t", "", -1)
 	reg, err := regexp.Compile(regex)
 	if err != nil {
 		log.Printf("reg parse error:%s\n", err.Error())
@@ -66,7 +67,7 @@ func ExtractItems(resp, regex string) ([]string, error) {
  * @param {*} resp
  * @param {string} regex
  */
-func ExtractItems2Json(resp string, regexes map[string]interface{}) (string, error) {
+func ExtractItems2Map(url,resp string, regexes map[string]interface{}) (map[string]interface{}, error) {
 	resp = strings.Replace(resp, " ", "", -1)
 	resp = strings.Replace(resp, "\n", "", -1)
 	resp = strings.Replace(resp, "\t", "", -1)
@@ -75,11 +76,13 @@ func ExtractItems2Json(resp string, regexes map[string]interface{}) (string, err
 		reg, err := regexp.Compile(v.(string))
 		if err != nil {
 			log.Printf("reg parse error:%s\n", err.Error())
-			return "", err
+			return nil, err
 		}
-		items1 := reg.FindAllString(resp, -1)
-		fmt.Println(items1)
 		items := reg.FindAllStringSubmatch(resp, -1)
+		if items==nil{
+			continue
+		}
+		mapResult["url"]=url
 		if k=="base" {
 			if err := json.Unmarshal([]byte(items[0][1]), &mapResult); err != nil {
 				log.Fatal(err)
@@ -97,10 +100,5 @@ func ExtractItems2Json(resp string, regexes map[string]interface{}) (string, err
 		}
 		mapResult[k]=field_content
 	}
-	b,err:=json.Marshal(mapResult)
-	if err!=nil{
-		log.Println(err)
-		return "",nil
-	}
-	return string(b), nil
+	return mapResult, nil
 }

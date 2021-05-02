@@ -407,15 +407,19 @@ func TestLinkUtil(*testing.T){
 		var s = document.getElementsByTagName("script")[0];
 		s.parentNode.insertBefore(mta, s);
 	})();
+	href="https://new.qq.com/ch/ent/"
 	</script><!--[if !IE]>|xGv00|4ade69361c277979a5d5757b4776e923<![endif]-->
 	<script src="//mat1.gtimg.com/pingjs/ext2020/dcom-static/build/static/js/static.js"></script>
 	<!--[if !IE]>|xGv00|78fe8a44ba68d8b81e1f6f713a13b0c5<![endif]-->
 	  </body>
 	</html>`
 	ConfigUtil.InitConfig("config")
-	items,err:=ExtractItems2Json(s,ConfigUtil.GetStringMap("client.rule.item_rule"))
+	items,err:=ExtractItems2Map("",s,ConfigUtil.GetStringMap("client.rule.item_rule"))
 	if err!=nil{
 		log.Println(err)
 	}
 	fmt.Println(items)
+	reg_url:="((http[s]{0,1})://)new((\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?"
+	urls,_:=ExtractUrls(s,reg_url)
+	fmt.Println(urls)
 }

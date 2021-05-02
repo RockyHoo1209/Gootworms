@@ -2,7 +2,7 @@
  * @Description:封装redis操作(redis实rpc通信)
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 21:13:41
- * @LastEditTime: 2021-04-22 07:59:09
+ * @LastEditTime: 2021-04-27 17:11:58
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -141,6 +141,17 @@ func NewClient() *Redis {
 	}
 }
 
+func (r *Redis) Llen(collection string) int {
+	con := r.pool.Get()
+	defer con.Close()
+	llen, err := redis.Int(con.Do("llen", collection))
+	if nil!=err{
+		log.Println("RedisUtil-Llen-error:",err.Error())
+		return -1
+	}
+	return llen
+}
+
 /**
  * @description: 初始化redis对外接口
  * @param  {*}
@@ -173,4 +184,3 @@ func InitRedis() (*Redis, error) {
 func Reconn() {
 	InitRedis()
 }
-

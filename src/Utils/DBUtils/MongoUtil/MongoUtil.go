@@ -2,7 +2,7 @@
  * @Description: MongoDB操作封装(单例,复用)
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 17:41:52
- * @LastEditTime: 2021-04-22 12:41:20
+ * @LastEditTime: 2021-04-27 17:17:09
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -21,13 +21,12 @@ import (
 )
 
 type Url struct {
-	Id  bson.ObjectId `bson:"_id"`
-	Url string        `json:"url"`
+	Key string        `json:"key"`
 }
 
 type Response struct {
-	Url     string `json:"Url"`
-	Context string `json:"context"`
+	Key     string      `json:"key"`
+	Context interface{} `json:"context"`
 }
 
 var Session *mgo.Session
@@ -45,32 +44,58 @@ func GetCollection(collectionName string) (session *mgo.Session, collection *mgo
 	return session, collection
 }
 
-func InsertUrls(url string) {
-	session, collection := GetCollection("Urls")
+/**
+ * @description: 插入数据库操作，如果没有则插入，存在则更新
+ * @param  {*}
+ * @return {*}
+ * @param {*} collectionName
+ * @param {string} key:MongoDb插入主键
+ * @param {interface{}} data:将要插入的数据
+ */
+func Insert(collectionName, key string, data interface{}) error {
+	session, collection := GetCollection(collectionName)
 	defer session.Close()
-	err := collection.Insert(&Url{
-		Id:  bson.NewObjectId(),
-		Url: url,
-	})
+	err := collection.Insert(data)
 	if err != nil {
-		log.Printf("Url insert error:%s\n", err.Error())
-		return
+		_, err := collection.Upsert(bson.M{"key": key}, data)
+		if nil != err {
+			log.Printf("MongoUtil-Insert %s Faied:%s\n", collectionName, err.Error())
+			return err
+		}
 	}
-	log.Printf("Url:%s Insert Success!\n", url)
+	log.Printf("MongoUtil-Insert %s Success!\n", collectionName)
+	return nil
 }
 
-func InsertResponse(url, response string) {
-	session, collection := GetCollection("Response")
+func EnsureIndex(collectionName string,keyindx *mgo.Index){
+	session, collection := GetCollection(collectionName)
 	defer session.Close()
-	err := collection.Insert(&Response{
-		Url:     url,
+	collection.EnsureIndex(*keyindx)
+}
+
+func InsertUrls(url string) {
+	Insert("Urls", url, &Url{
+		Key: url,
+	})
+}
+
+func InsertResponse(url string, response interface{}) {
+	Insert("Response", url, &Response{
+		Key:     url,
 		Context: response,
 	})
-	if err != nil {
-		log.Println("Insert response failed!")
+}
+
+func InsertResult(result map[string]interface{}) {
+	if result == nil || len(result) < 1 {
 		return
 	}
-	log.Println("Insert Response Success!")
+	key_name:=ConfigUtil.GetString("server.resultKey")
+	key_value,ok:=result[key_name];if !ok{
+		return
+	}
+	result["key"]=key_value
+	Insert("Result", key_value.(string), result)
 }
 
 func InitMongo() {
@@ -113,13 +138,13 @@ func InitMongo() {
 		}, bp)
 	}
 
-	//设置主键唯一
-	keyindx := mgo.Index{
+	//设置key唯一
+	keyindx := &mgo.Index{
 		Key:    []string{"key"},
 		Unique: true,
 	}
-	//获取节点信息
-	session, collection := GetCollection("nodes")
-	defer session.Close()
-	collection.EnsureIndex(keyindx)
+	EnsureIndex("Urls",keyindx)
+	EnsureIndex("Reponse",keyindx)
+	EnsureIndex("nodes",keyindx)
+	EnsureIndex("Result",keyindx)
 }

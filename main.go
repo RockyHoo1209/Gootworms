@@ -100,5 +100,6 @@ func main() {
 	case "worker":
 		runWorker()
 	}
+	/* 阻塞运行 */
 	select{}
 }

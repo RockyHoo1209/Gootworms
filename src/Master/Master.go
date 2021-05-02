@@ -2,7 +2,7 @@
  * @Description: Master节点的编写
  * @Author: Rocky Hoo
  * @Date: 2021-04-05 00:01:58
- * @LastEditTime: 2021-04-12 23:08:50
+ * @LastEditTime: 2021-04-27 08:08:28
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -14,7 +14,7 @@ import (
 	"log"
 	"main/src/Data"
 
-	"github.com/spf13/viper"
+	"main/src/Utils/ConfigUtil"
 	"main/src/Utils/DBUtils/MongoUtil"
 	"main/src/Utils/DBUtils/RedisUtil"
 	"sync"
@@ -49,6 +49,7 @@ func InitMaster() (m *Master) {
 	return
 }
 
+//判断url是否重复,若重复则返回false,反之返回true
 func (m *Master) IsDuplicate(url string) bool {
 	if _, ok := m.visited[url]; ok {
 		return false
@@ -66,8 +67,10 @@ func (m *Master) GetResult() {
 	result, err := m.redis.BLPop("Result", 0)
 	if err != nil {
 		log.Println("Master-GetUrl:" + err.Error())
-		// url := "https://www.dandanzan.cc"
-		url := viper.GetString("server.firstUrl")
+		url := ConfigUtil.GetString("server.firstUrl")
+		if m.redis.Llen("Jobs")>0{
+			return
+		}
 		if m.IsDuplicate(url) {
 			m.url_chan <- url
 			MongoUtil.InsertUrls(url)
@@ -80,7 +83,8 @@ func (m *Master) GetResult() {
 		if m.IsDuplicate(url) {
 			m.url_chan <- url
 			MongoUtil.InsertUrls(url)
-			MongoUtil.InsertResponse(url, resultObj.Resp)
+			// MongoUtil.InsertResponse(url, resultObj.Items)
+			MongoUtil.InsertResult(resultObj.Items.(map[string]interface{}))
 		}
 	}
 }
