@@ -32,7 +32,7 @@
 这是一个用golang编写的主从分布式爬虫
 
 ## 🏁 Getting Started <a name = "getting_started"></a>
-### 项目结构
+### Project Tree
 ```
 Gootworms
 ├─ conf
