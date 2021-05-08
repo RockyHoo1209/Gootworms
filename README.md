@@ -2,7 +2,7 @@
   <a href="" rel="noopener"></a>
 </p>
 
-<h3 align="center">Gootworms</h3>
+<h1 align="center">Gootworms</h1>
 
 <div align="center">
 
