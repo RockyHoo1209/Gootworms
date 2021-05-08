@@ -1,6 +1,5 @@
 <p align="center">
-  <a href="" rel="noopener">
- <img width=200px height=200px src="./Gootworms.jpg" alt="Project logo"></a>
+  <a href="" rel="noopener"></a>
 </p>
 
 <h3 align="center">Gootworms</h3>
