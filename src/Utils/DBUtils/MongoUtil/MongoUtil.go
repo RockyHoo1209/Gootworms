@@ -2,7 +2,7 @@
  * @Description: MongoDB操作封装(单例,复用)
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 17:41:52
- * @LastEditTime: 2021-04-27 17:17:09
+ * @LastEditTime: 2021-05-11 09:58:02
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -67,6 +67,10 @@ func Insert(collectionName, key string, data interface{}) error {
 	return nil
 }
 
+func DelDB(){
+	
+}
+
 func EnsureIndex(collectionName string,keyindx *mgo.Index){
 	session, collection := GetCollection(collectionName)
 	defer session.Close()
@@ -85,6 +89,7 @@ func InsertResponse(url string, response interface{}) {
 		Context: response,
 	})
 }
+
 
 func InsertResult(result map[string]interface{}) {
 	if result == nil || len(result) < 1 {

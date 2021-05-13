@@ -2,7 +2,7 @@
  * @Description:配置文件工具类
  * @Author: Rocky Hoo
  * @Date: 2021-03-22 20:46:18
- * @LastEditTime: 2021-04-22 07:56:28
+ * @LastEditTime: 2021-05-13 16:49:02
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -64,4 +64,8 @@ func GetString(field_name string) string {
 
 func GetStringMap(field_name string) map[string]interface{}{
 	return viper.GetStringMap(field_name)
+}
+
+func GetStringSlice(field_name string) []string{
+	return viper.GetStringSlice(field_name)
 }

@@ -2,7 +2,7 @@
  * @Description: 负责解析页面的主要工作
  * @Author: Rocky Hoo
  * @Date: 2021-03-24 14:51:53
- * @LastEditTime: 2021-04-26 20:38:23
+ * @LastEditTime: 2021-05-13 17:03:05
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -95,21 +95,23 @@ func (s *Spider) Crawl2(url, resp string, regex map[string]interface{}) {
 		}
 		return
 	}
-	regexp_url:=ConfigUtil.GetString("client.rule.url_rule")
-	subUrls, err := LinksUtil.ExtractUrls(resp,regexp_url)
-	if err != nil {
+	regexp_urls:=ConfigUtil.GetStringSlice("client.rule.url_rule")
+	for _,regexp_url:=range(regexp_urls){
+		subUrls, err := LinksUtil.ExtractUrls(resp,regexp_url)
+		if err != nil {
+			s.result_chan <- &Data.Result{
+				Items:   items,
+				Suburls: subUrls,
+				Resp:    resp,
+			}
+			return
+		}
+
 		s.result_chan <- &Data.Result{
 			Items:   items,
 			Suburls: subUrls,
 			Resp:    resp,
-		}
-		return
-	}
-
-	s.result_chan <- &Data.Result{
-		Items:   items,
-		Suburls: subUrls,
-		Resp:    resp,
+		}		
 	}
 }
 

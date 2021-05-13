@@ -1,11 +1,13 @@
+chromedriver:
+  path: "/bin/chromedriver"
 redis:
-  address: 127.0.0.1
+  address: 192.168.0.107
   password: ""
   database: 1
   port: 6379
 
 mongo:
-  address: 127.0.0.1
+  address: 192.168.0.107
   password: ""
   db: "Gootworms"
   port: 27017
@@ -18,7 +20,12 @@ server:
 
 client:
   rule:
-    url_rule: "((http[s]{0,1})://)new(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?"
+    url_rule: 
+      #匹配http/https开头的url  
+      # - "((http[s]{0,1})://)new(([a-zA-Z0-9\\._-]+\\.[a-zA-Z]{2,6})|([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9\\&%_\\./-~-]*)?"
+      - "/job_detail/.*?.html"
+      - "/c100010000/.*?page=[0-9]+?\""
+      - '<h3>职位描述</h3><divclass="text">.*?</div>'
     item_rule:
       base: "window.DATA.*?({.*?})"
       content: '<p(.)?class=.one-p.>(.*?)</p>'

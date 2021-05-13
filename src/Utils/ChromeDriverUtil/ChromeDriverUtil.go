@@ -2,7 +2,7 @@
  * @Description:simulate chrome browser to request a web
  * @Author: Rocky Hoo
  * @Date: 2021-03-21 17:38:25
- * @LastEditTime: 2021-03-21 17:39:13
+ * @LastEditTime: 2021-05-13 19:19:16
  * @LastEditors: Please set LastEditors
  * @CopyRight:
  * Copyright (c) 2021 XiaoPeng Studio
@@ -11,6 +11,7 @@ package ChromeDriverUtil
 
 import (
 	"fmt"
+	"main/src/Utils/ConfigUtil"
 
 	"log"
 
@@ -68,7 +69,7 @@ func ParseUrl(targetUrl string)(string,error){
 
 	// 启动chromedriver，端口号可自定义
 
-	service, err := selenium.NewChromeDriverService("/bin/chromedriver", 9516, chrome_service.opts...)
+	service, err := selenium.NewChromeDriverService(ConfigUtil.GetString("chromedriver.path"), 9516, chrome_service.opts...)
 
 	if err != nil {
 
